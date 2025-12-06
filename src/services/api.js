@@ -1,6 +1,8 @@
 const BASE_URL = 'https://footballmanagement-7507.restdb.io/rest/';
 const API_KEY = '27b248f46568ecc48fd818ce96fd5e629b881';
 
+const IMGBB_API_KEY = 'b8e2a90f6bd6751c86ce3394097b7006';
+
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
 
@@ -24,6 +26,29 @@ async function request(path, options = {}) {
     }
 
     return response.json();
+}
+export async function uploadImageToImgbb(base64Image) {
+    const formData = new FormData();
+    formData.append('image', base64Image);
+
+    const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+            method: 'POST',
+            body: formData,
+        }
+    );
+
+    const json = await response.json();
+
+    if (!response.ok || !json.success) {
+        throw new Error('Falha ao fazer upload para ImgBB');
+    }
+
+    const imageUrl = json.data.display_url;
+    const deleteUrl = json.data.delete_url;
+
+    return { imageUrl, deleteUrl };
 }
 
 // ==== LOGIN SIMPLES ====
@@ -76,5 +101,29 @@ export async function findUserByNameOrEmail(username, email) {
     });
 
     return Array.isArray(users) ? users : [];
+}
+// === EQUIPAS DO UTILIZADOR ===
+export async function getTeamsByUser(userId) {
+    const query = { user_id: userId }; // <- aqui assumes que guardas o _id do user
+
+    const qs = encodeURIComponent(JSON.stringify(query));
+
+    return request(`/teams?q=${qs}`, {
+        method: 'GET',
+    });
+}
+// === CRIAR EQUIPA ===
+export async function createTeamApi(userId, name, imageUrl, imageDeleteUrl) {
+    const team = {
+        user_id: userId,
+        name,
+        image: imageUrl,
+        image_delete_url: imageDeleteUrl,
+    };
+
+    return request('/teams', {
+        method: 'POST',
+        body: JSON.stringify(team),
+    });
 }
 

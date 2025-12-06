@@ -100,9 +100,6 @@ class RegisterScreen extends Component {
 
         return (
             <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16 }}>
-                <Text style={{ fontSize: 24, marginBottom: 16, textAlign: 'center' }}>
-                    Criar conta
-                </Text>
 
                 <Text>Nome</Text>
                 <TextInput

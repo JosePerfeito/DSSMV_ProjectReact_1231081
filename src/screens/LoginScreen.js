@@ -42,7 +42,9 @@ class LoginScreen extends Component {
             const user = await loginApi(username, password);
             this.setState({ loggedUser: user });
             Alert.alert('Login', `Bem-vindo, ${user.username || 'utilizador'}!`);
-            // MAIS TARDE: navegar para lista de equipas
+
+            // Aqui navegamos para a screen das equipas
+            this.props.navigation.navigate('Teams', { user });
         } catch (err) {
             console.error(err);
             Alert.alert('Erro', 'Login falhou. Verifica as credenciais.');
