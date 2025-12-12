@@ -7,6 +7,9 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import TeamsScreen from './src/screens/TeamsScreen';
 import AddTeamScreen from './src/screens/AddTeamScreen';
+import TeamPlayersScreen from './src/screens/TeamPlayersScreen';
+import AddPlayerScreen from './src/screens/AddPlayerScreen';
+
 
 
 enableScreens();
@@ -38,7 +41,16 @@ class App extends Component {
                         component={AddTeamScreen}
                         options={{ title: 'Nova equipa' }}
                     />
-
+                    <Stack.Screen
+                        name="TeamPlayers"
+                        component={TeamPlayersScreen}
+                        options={{ title: 'Jogadores' }}
+                    />
+                    <Stack.Screen
+                        name="AddPlayer"
+                        component={AddPlayerScreen}
+                        options={{ title: 'Novo jogador' }}
+                    />
                 </Stack.Navigator>
             </NavigationContainer>
         );

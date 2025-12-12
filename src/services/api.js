@@ -1,6 +1,9 @@
 const BASE_URL = 'https://footballmanagement-7507.restdb.io/rest/';
 const API_KEY = '27b248f46568ecc48fd818ce96fd5e629b881';
 
+//const BASE_URL = 'https://footballmanagement-ded7.restdb.io/rest/';
+//const API_KEY = 'b3e7d5a7c3fce57cf3e17440364e8af53d6e8';
+
 const IMGBB_API_KEY = 'b8e2a90f6bd6751c86ce3394097b7006';
 
 async function request(path, options = {}) {
@@ -126,4 +129,41 @@ export async function createTeamApi(userId, name, imageUrl, imageDeleteUrl) {
         body: JSON.stringify(team),
     });
 }
+// === JOGADORES DA EQUIPA ===
+export async function getPlayersByTeam(teamId) {
+    const query = { id_team: teamId };
+
+    const qs = encodeURIComponent(JSON.stringify(query));
+
+    return request(`/players?q=${qs}`, {
+        method: 'GET',
+    });
+}
+// === CRIAR JOGADOR ===
+export async function createPlayerApi(
+    teamId,
+    name,
+    birthday,
+    number,
+    position,
+    photoUrl,
+    photoDeleteUrl
+) {
+    const player = {
+        id_team: teamId,
+        name,
+        birthday,
+        number,
+        position,
+        photo: photoUrl,
+        photo_delete_url: photoDeleteUrl,
+    };
+
+    return request('/players', {
+        method: 'POST',
+        body: JSON.stringify(player),
+    });
+}
+
+
 
