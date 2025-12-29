@@ -1,59 +1,32 @@
 import React, { Component } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { enableScreens } from 'react-native-screens';
+import { AppProvider } from './src/context/AppContext';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import TeamsScreen from './src/screens/TeamsScreen';
+import PlayersScreen from './src/screens/PlayersScreen';
 import AddTeamScreen from './src/screens/AddTeamScreen';
-import TeamPlayersScreen from './src/screens/TeamPlayersScreen';
 import AddPlayerScreen from './src/screens/AddPlayerScreen';
-
-
-
-enableScreens();
 
 const Stack = createNativeStackNavigator();
 
-class App extends Component {
+export default class App extends Component {
     render() {
         return (
-            <NavigationContainer>
-                <Stack.Navigator initialRouteName="Login">
-                    <Stack.Screen
-                        name="Login"
-                        component={LoginScreen}
-                        options={{ title: 'Login' }}
-                    />
-                    <Stack.Screen
-                        name="Register"
-                        component={RegisterScreen}
-                        options={{ title: 'Criar conta' }}
-                    />
-                    <Stack.Screen
-                        name="Teams"
-                        component={TeamsScreen}
-                        options={{ title: 'As minhas equipas' }}
-                    />
-                    <Stack.Screen
-                        name="AddTeam"
-                        component={AddTeamScreen}
-                        options={{ title: 'Nova equipa' }}
-                    />
-                    <Stack.Screen
-                        name="TeamPlayers"
-                        component={TeamPlayersScreen}
-                        options={{ title: 'Jogadores' }}
-                    />
-                    <Stack.Screen
-                        name="AddPlayer"
-                        component={AddPlayerScreen}
-                        options={{ title: 'Novo jogador' }}
-                    />
-                </Stack.Navigator>
-            </NavigationContainer>
+            <AppProvider>
+                <NavigationContainer>
+                    <Stack.Navigator initialRouteName="Login">
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Criar conta' }} />
+                        <Stack.Screen name="Teams" component={TeamsScreen} options={{ title: 'Equipas' }} />
+                        <Stack.Screen name="AddTeam" component={AddTeamScreen} options={{ title: 'Adicionar equipa' }} />
+                        <Stack.Screen name="Players" component={PlayersScreen} options={{ title: 'Equipa' }} />
+                        <Stack.Screen name="AddPlayer" component={AddPlayerScreen} options={{ title: 'Adicionar jogador' }} />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </AppProvider>
         );
     }
 }
-export default App;

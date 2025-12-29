@@ -1,217 +1,103 @@
 import React, { Component } from 'react';
-import { View, Text, FlatList, Image, ActivityIndicator, Alert, Button, Modal, TouchableOpacity,} from 'react-native';
-import { getTeamsByUser } from '../services/api';
+import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity, Button, Alert } from 'react-native';
+import { AppContext } from '../context/AppContext';
+import { fetchTeamsByUser } from '../context/actions/teamActions';
+import { logout } from '../context/actions/authActions';
 
 class TeamsScreen extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            teams: [],
-            loading: false,
-            menuVisible: false,
-            selectedTeam: null,
-        };
-    }
+    static contextType = AppContext;
 
     componentDidMount() {
-        const {navigation, route} = this.props;
-        const user = route.params?.user;
+        const { state, dispatch } = this.context;
+        const user = state.auth.user;
 
-        if (!user) {
-            Alert.alert('Erro', 'Utilizador não encontrado.');
-            return;
+        this.props.navigation.setOptions({
+            headerLeft: () => null,
+            headerRight: () => (
+                <View style={{ flexDirection: 'row' }}>
+                    <Button title="+" onPress={() => this.props.navigation.navigate('AddTeam')} />
+                    <View style={{ width: 8 }} />
+                    <Button
+                        title="<-"
+                        onPress={() => {
+                            Alert.alert('Sair', 'Queres terminar sessão?', [
+                                { text: 'Cancelar', style: 'cancel' },
+                                {
+                                    text: 'Sair',
+                                    style: 'destructive',
+                                    onPress: () => {
+                                        this.context.dispatch(logout());
+                                        this.props.navigation.replace('Login');
+                                    },
+                                },
+                            ]);
+                        }}
+                    />
+                </View>
+            ),
+        });
+
+        if (user) {
+            fetchTeamsByUser(user._id || user.id, dispatch);
         }
 
-        const userId = user._id || user.id;
-
-        // carregar uma vez
-        this.loadTeams(userId);
-
-        // recarregar sempre que o ecrã ganhar foco
-        this.unsubscribeFocus = navigation.addListener('focus', () => {
-            this.loadTeams(userId);
-        });
-        // botão "+" no header
-        navigation.setOptions({
-            headerRight: () => (
-                <Button
-                    title="+"
-                    onPress={() => navigation.navigate('AddTeam', {user})}
-                />
-            ),
+        this.unsubscribe = this.props.navigation.addListener('focus', () => {
+            const u = this.context.state.auth.user;
+            if (u) {
+                fetchTeamsByUser(u._id || u.id, this.context.dispatch);
+            }
         });
     }
 
     componentWillUnmount() {
-        if (this.unsubscribeFocus) {
-            this.unsubscribeFocus();
-        }
+        if (this.unsubscribe) this.unsubscribe();
     }
 
-    loadTeams = async (userId) => {
-        this.setState({loading: true});
-        try {
-            const data = await getTeamsByUser(userId);
-            this.setState({teams: data});
-        } catch (err) {
-            console.error(err);
-            Alert.alert('Erro', 'Não foi possível carregar as equipas.');
-        } finally {
-            this.setState({loading: false});
-        }
-    };
-
-    // ---- MENU ----
-    openTeamMenu = (team) => {
-        this.setState({menuVisible: true, selectedTeam: team});
-    };
-
-    closeMenu = () => {
-        this.setState({menuVisible: false, selectedTeam: null});
-    };
-
-    handleViewTeam = () => {
-        const { selectedTeam } = this.state;
-        const { navigation, route } = this.props;
-
-        if (!selectedTeam) {
-            this.closeMenu();
-            return;
-        }
-
-        this.closeMenu();
-
-        const user = route.params?.user;
-
-        navigation.navigate('TeamPlayers', {
-            team: selectedTeam,
-            user,
-        });
-    };
-
-    handleViewStats = () => {
-        const {selectedTeam} = this.state;
-        console.log('Ver estatísticas', selectedTeam);
-        this.closeMenu();
-    };
-
-    handleDeleteTeam = () => {
-        const {selectedTeam} = this.state;
-        console.log('Apagar equipa', selectedTeam);
-        this.closeMenu();
-    };
-
-    renderTeamItem = ({item}) => {
-        return (
-            <TouchableOpacity onPress={() => this.openTeamMenu(item)}>
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        paddingVertical: 8,
-                        borderBottomWidth: 1,
-                        borderColor: '#ccc',
-                    }}
-                >
-                    <Image
-                        source={{uri: item.image}}
-                        style={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 30,
-                            marginRight: 12,
-                            backgroundColor: '#ddd',
-                        }}
-                    />
-                    <Text style={{fontSize: 18}}>{item.name}</Text>
-                </View>
-            </TouchableOpacity>
-        );
-    };
+    renderItem = ({ item }) => (
+        <TouchableOpacity
+            onPress={() => this.props.navigation.navigate('Players', { team: item })}
+            style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 10,
+                borderBottomWidth: 2,
+                borderBottomColor: '#9e9e9e',
+            }}
+        >
+            <Image
+                source={{ uri: item.image }}
+                style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: 27,
+                    marginRight: 12,
+                    backgroundColor: '#eee',
+                }}
+            />
+            <Text style={{ fontSize: 18 }}>{item.name}</Text>
+        </TouchableOpacity>
+    );
 
     render() {
-        const {teams, loading, menuVisible, selectedTeam} = this.state;
+        const { loading, error, data } = this.context.state.teams;
+
+        if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+        if (error) return <Text style={{ padding: 16 }}>{error}</Text>;
 
         return (
-            <View style={{flex: 1, paddingTop: 16, paddingHorizontal: 16}}>
-                {loading ? (
-                    <ActivityIndicator/>
-                ) : teams.length === 0 ? (
+            <View style={{ flex: 1, padding: 16 }}>
+                {data.length === 0 ? (
                     <Text>Não tens equipas ainda.</Text>
                 ) : (
                     <FlatList
-                        data={teams}
-                        keyExtractor={(item) => (item._id || item.id).toString()}
-                        renderItem={this.renderTeamItem}
+                        data={data}
+                        keyExtractor={(i) => (i._id || i.id).toString()}
+                        renderItem={this.renderItem}
                     />
                 )}
-
-                {/* MENU EM BAIXO */}
-                <Modal
-                    visible={menuVisible}
-                    transparent
-                    animationType="slide"
-                    onRequestClose={this.closeMenu}
-                >
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            backgroundColor: 'rgba(0,0,0,0.4)',
-                            justifyContent: 'flex-end',
-                        }}
-                        activeOpacity={1}
-                        onPress={this.closeMenu} // fecha ao clicar fora
-                    >
-                        <View
-                            style={{
-                                backgroundColor: 'white',
-                                paddingHorizontal: 16,
-                                paddingTop: 16,
-                                paddingBottom: 8,
-                                borderTopLeftRadius: 16,
-                                borderTopRightRadius: 16,
-                            }}
-                        >
-                            <Text style={{fontSize: 16, marginBottom: 12}}>
-                                {selectedTeam ? selectedTeam.name : 'Opções'}
-                            </Text>
-
-                            <TouchableOpacity
-                                style={{paddingVertical: 10}}
-                                onPress={this.handleViewTeam}
-                            >
-                                <Text style={{fontSize: 16}}>Ver equipa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{paddingVertical: 10}}
-                                onPress={this.handleViewStats}
-                            >
-                                <Text style={{fontSize: 16}}>Ver estatísticas de equipa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{paddingVertical: 10}}
-                                onPress={this.handleDeleteTeam}
-                            >
-                                <Text style={{fontSize: 16, color: 'red'}}>
-                                    Apagar equipa
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{paddingVertical: 10, marginTop: 4}}
-                                onPress={this.closeMenu}
-                            >
-                                <Text style={{fontSize: 16, textAlign: 'center'}}>
-                                    Cancelar
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </TouchableOpacity>
-                </Modal>
             </View>
         );
     }
 }
+
 export default TeamsScreen;

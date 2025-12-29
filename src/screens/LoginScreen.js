@@ -1,114 +1,53 @@
 import React, { Component } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    Button,
-    ActivityIndicator,
-    Alert,
-} from 'react-native';
-import { loginApi } from '../services/api';
+import { View, Text, TextInput, Button, ActivityIndicator, Alert } from 'react-native';
+import { AppContext } from '../context/AppContext';
+import { login } from '../context/actions/authActions';
 
 class LoginScreen extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            username: '',
-            password: '',
-            loading: false,
-            loggedUser: null,
-        };
-    }
+    static contextType = AppContext;
 
-    handleChangeUsername = (text) => {
-        this.setState({ username: text });
-    };
-
-    handleChangePassword = (text) => {
-        this.setState({ password: text });
-    };
+    state = { username: '', password: '' };
 
     handleLogin = async () => {
+        const { dispatch } = this.context;
         const { username, password } = this.state;
 
-        if (!username || !password) {
-            Alert.alert('Erro', 'Preenche nome e password.');
-            return;
+        const user = await login(username.trim(), password, dispatch);
+        if (user) {
+            this.props.navigation.replace('Teams');
+        } else {
+            Alert.alert('Erro', 'Login falhou.');
         }
-
-        this.setState({ loading: true });
-
-        try {
-            const user = await loginApi(username, password);
-            this.setState({ loggedUser: user });
-            Alert.alert('Login', `Bem-vindo, ${user.username || 'utilizador'}!`);
-
-            // Aqui navegamos para a screen das equipas
-            this.props.navigation.navigate('Teams', { user });
-        } catch (err) {
-            console.error(err);
-            Alert.alert('Erro', 'Login falhou. Verifica as credenciais.');
-        } finally {
-            this.setState({ loading: false });
-        }
-    };
-
-    goToRegister = () => {
-        this.props.navigation.navigate('Register');
     };
 
     render() {
-        const { username, password, loading, loggedUser } = this.state;
+        const { state } = this.context;
+        const { username, password } = this.state;
 
         return (
-            <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16 }}>
-                <Text style={{ fontSize: 24, marginBottom: 16, textAlign: 'center' }}>
-                    Football Management
-                </Text>
-
-                <Text>Nome</Text>
-                <TextInput
-                    value={username}
-                    onChangeText={this.handleChangeUsername}
-                    autoCapitalize="none"
-                    style={{
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        padding: 8,
-                        marginBottom: 12,
-                    }}
-                />
+            <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
+                <Text>Username</Text>
+                <TextInput value={username} onChangeText={(t) => this.setState({ username: t })} style={{ borderWidth: 1, padding: 8, marginBottom: 12 }} />
 
                 <Text>Password</Text>
-                <TextInput
-                    value={password}
-                    onChangeText={this.handleChangePassword}
-                    secureTextEntry
-                    style={{
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        padding: 8,
-                        marginBottom: 16,
-                    }}
-                />
+                <TextInput value={password} onChangeText={(t) => this.setState({ password: t })} secureTextEntry style={{ borderWidth: 1, padding: 8, marginBottom: 12 }} />
 
-                {loading ? (
-                    <ActivityIndicator />
-                ) : (
-                    <>
-                        <Button title="Entrar" onPress={this.handleLogin} />
-                        <View style={{ height: 10 }} />
-                        <Button title="Criar conta" onPress={this.goToRegister} />
-                    </>
-                )}
-
-                {loggedUser && (
-                    <Text style={{ marginTop: 20, textAlign: 'center' }}>
-                        Login efetuado como: {loggedUser.username}
-                    </Text>
-                )}
+                {state.auth.loading ? <ActivityIndicator /> : <Button title="Login" onPress={this.handleLogin} />}
+                <View style={{ height: 10 }} />
+                <Button title="Criar conta" onPress={() => this.props.navigation.navigate('Register')} />
             </View>
         );
     }
+    componentDidMount() {
+        this.unsubscribe = this.props.navigation.addListener('focus', () => {
+            this.setState({ username: '', password: '' });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribe) this.unsubscribe();
+    }
+
 }
+
 export default LoginScreen;
