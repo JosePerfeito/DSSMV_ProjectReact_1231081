@@ -63,6 +63,15 @@ class AddPlayerScreen extends Component {
             this.setState({ localUri: asset.uri, base64Image: asset.base64 });
         });
     };
+    isFutureDate = (dateObj) => {
+        const d = new Date(dateObj);
+        d.setHours(0, 0, 0, 0);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return d > today;
+    };
 
     handleSave = async () => {
         const { dispatch } = this.context;
@@ -77,16 +86,19 @@ class AddPlayerScreen extends Component {
         if (selectedPositions.length === 0) return Alert.alert('Erro', 'Seleciona pelo menos uma posição.');
         if (!base64Image) return Alert.alert('Erro', 'Escolhe uma fotografia.');
 
-        // ✅ número 1..99
+        //  número 1..99
         const shirtNumber = parseInt(number, 10);
         if (isNaN(shirtNumber)) return Alert.alert('Erro', 'O número do jogador tem de ser numérico.');
         if (shirtNumber < 1 || shirtNumber > 99) return Alert.alert('Erro', 'O número do jogador tem de estar entre 1 e 99.');
 
         try {
-            // ✅ evitar data futura (extra)
-            if (birthdayDate > new Date()) return Alert.alert('Erro', 'A data de nascimento não pode ser futura.');
+            //  evitar data futura
+            if (this.isFutureDate(birthdayDate)) {
+                Alert.alert('Erro', 'A data de nascimento não pode ser futura.');
+                return;
+            }
 
-            // ✅ impedir nº repetido (1 request)
+            //  impedir nº repetido
             const exists = await existsPlayerNumber(teamId, shirtNumber);
             if (exists) return Alert.alert('Erro', 'Já existe um jogador com esse número.');
 
@@ -189,4 +201,3 @@ class AddPlayerScreen extends Component {
 }
 
 export default AddPlayerScreen;
-0
