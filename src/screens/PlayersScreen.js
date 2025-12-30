@@ -3,10 +3,10 @@ import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity, Butto
 import { AppContext } from '../context/AppContext';
 import { fetchPlayersByTeam } from '../context/actions/playerActions';
 
+
 function calcAge(value) {
     if (!value) return null;
 
-    // Aceita Date ou string
     let dob;
 
     if (value instanceof Date) {
@@ -44,7 +44,11 @@ class PlayersScreen extends Component {
         this.props.navigation.setOptions({
             title: team.name,
             headerRight: () => (
-                <Button title="+" onPress={() => this.props.navigation.navigate('AddPlayer', { team })} />
+                <View style={{ flexDirection: 'row' }}>
+                    <Button title="⚽" onPress={() => this.props.navigation.navigate('TeamGames', { team })} />
+                    <View style={{ width: 8 }} />
+                    <Button title="+" onPress={() => this.props.navigation.navigate('AddPlayer', { team })} />
+                </View>
             ),
         });
 

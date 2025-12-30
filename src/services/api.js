@@ -6,6 +6,7 @@ const COL = {
     USERS: 'users',
     TEAMS: 'teams',
     PLAYERS: 'players',
+    GAMES: 'Games',
 };
 
 // ImgBB
@@ -102,6 +103,13 @@ export async function createPlayerApi(teamId, name, birthday, number, position, 
         }),
     });
 }
+
+/* ===== Games ===== */
+export async function getGamesByTeam(teamId) {
+    const q = encodeURIComponent(JSON.stringify({ id_team: teamId }));
+    return request(`/Games?q=${q}&sort=date&dir=-1`, { method: 'GET' });
+}
+
 
 /* ===== ImgBB ===== */
 

@@ -2,6 +2,8 @@ export const initialState = {
     auth: { loading: false, error: null, user: null },
     teams: { loading: false, error: null, data: [] },
     players: { loading: false, error: null, data: [], teamId: null },
+    games: { loading: false, error: null, data: [], teamId: null },
+
 };
 
 export default function reducer(state, action) {
@@ -44,5 +46,22 @@ export default function reducer(state, action) {
 
         default:
             return state;
+        // Games
+        case 'FETCH_GAMES_STARTED':
+            return { ...state, games: { ...state.games, loading: true, error: null } };
+
+        case 'FETCH_GAMES_SUCCESS':
+            return {
+                ...state,
+                games: {loading: false, error: null, data: action.payload.data, teamId: action.payload.teamId,
+                },
+            };
+
+        case 'FETCH_GAMES_FAILURE':
+            return {
+                ...state,
+                games: { loading: false, error: action.payload.error, data: [], teamId: state.games.teamId },
+            };
+
     }
 }

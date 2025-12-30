@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity, Button, Alert } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import { fetchTeamsByUser } from '../context/actions/teamActions';
-import { logout } from '../context/actions/authActions';
 
 class TeamsScreen extends Component {
     static contextType = AppContext;
