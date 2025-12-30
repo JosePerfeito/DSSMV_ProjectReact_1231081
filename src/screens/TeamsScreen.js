@@ -17,22 +17,6 @@ class TeamsScreen extends Component {
                 <View style={{ flexDirection: 'row' }}>
                     <Button title="+" onPress={() => this.props.navigation.navigate('AddTeam')} />
                     <View style={{ width: 8 }} />
-                    <Button
-                        title="<-"
-                        onPress={() => {
-                            Alert.alert('Sair', 'Queres terminar sessão?', [
-                                { text: 'Cancelar', style: 'cancel' },
-                                {
-                                    text: 'Sair',
-                                    style: 'destructive',
-                                    onPress: () => {
-                                        this.context.dispatch(logout());
-                                        this.props.navigation.replace('Login');
-                                    },
-                                },
-                            ]);
-                        }}
-                    />
                 </View>
             ),
         });

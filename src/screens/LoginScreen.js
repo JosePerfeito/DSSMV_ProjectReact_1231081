@@ -14,7 +14,7 @@ class LoginScreen extends Component {
 
         const user = await login(username.trim(), password, dispatch);
         if (user) {
-            this.props.navigation.replace('Teams');
+            this.props.navigation.navigate('Teams');
         } else {
             Alert.alert('Erro', 'Login falhou.');
         }
