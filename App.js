@@ -10,6 +10,8 @@ import PlayersScreen from './src/screens/PlayersScreen';
 import AddTeamScreen from './src/screens/AddTeamScreen';
 import AddPlayerScreen from './src/screens/AddPlayerScreen';
 import TeamGamesScreen from './src/screens/TeamGamesScreen';
+import AddGameScreen from './src/screens/AddGameScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +28,7 @@ export default class App extends Component {
                         <Stack.Screen name="Players" component={PlayersScreen} options={{ title: 'Equipa' }} />
                         <Stack.Screen name="AddPlayer" component={AddPlayerScreen} options={{ title: 'Adicionar jogador' }} />
                         <Stack.Screen name="TeamGames" component={TeamGamesScreen} options={{ title: 'Resultados' }} />
+                        <Stack.Screen name="AddGame" component={AddGameScreen} options={{ title: 'Adicionar jogo' }} />
                     </Stack.Navigator>
                 </NavigationContainer>
             </AppProvider>

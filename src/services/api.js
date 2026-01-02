@@ -6,7 +6,8 @@ const COL = {
     USERS: 'users',
     TEAMS: 'teams',
     PLAYERS: 'players',
-    GAMES: 'Games',
+    GAMES: 'games',
+    GAMESTATS: 'gamestats',
 };
 
 // ImgBB
@@ -15,10 +16,12 @@ const IMGBB_API_KEY = 'b8e2a90f6bd6751c86ce3394097b7006';
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
 
+    const isForm = options.body instanceof FormData;
+
     const res = await fetch(url, {
         ...options,
         headers: {
-            'Content-Type': 'application/json',
+            ...(isForm ? {} : { 'Content-Type': 'application/json' }),
             'x-apikey': RESTDB_API_KEY,
             ...(options.headers || {}),
         },
@@ -105,9 +108,61 @@ export async function createPlayerApi(teamId, name, birthday, number, position, 
 }
 
 /* ===== Games ===== */
+
 export async function getGamesByTeam(teamId) {
     const q = encodeURIComponent(JSON.stringify({ id_team: teamId }));
-    return request(`/Games?q=${q}&sort=date&dir=-1`, { method: 'GET' });
+    return request(`/${COL.GAMES}?q=${q}&sort=date&dir=-1`, { method: 'GET' });
+}
+
+export async function createGameApi(teamId, date, opponent, goalsFor, goalsAgainst, home) {
+    return request(`/${COL.GAMES}`, {
+        method: 'POST',
+        body: JSON.stringify({
+            id_team: teamId,
+            date,
+            opponent,
+            goals_for: Number(goalsFor),
+            goals_against: Number(goalsAgainst),
+            home: Boolean(home),
+        }),
+    });
+}
+
+/* ===== GameStats ===== */
+
+export async function createGameStatApi(gameId, playerId, starter, goals, assists, yellowCards, redCard) {
+    return request(`/${COL.GAMESTATS}`, {
+        method: 'POST',
+        body: JSON.stringify({
+            id_game: gameId,
+            id_player: playerId,
+            starter: Boolean(starter),
+            goals: Number(goals) || 0,
+            assists: Number(assists) || 0,
+            yellow_cards: Number(yellowCards) || 0,
+            red_card: Boolean(redCard),
+        }),
+    });
+}
+
+export async function createGameWithStats(teamId, date, opponent, goalsFor, goalsAgainst, home, statsArray) {
+    const game = await createGameApi(teamId, date, opponent, goalsFor, goalsAgainst, home);
+    const gameId = game._id || game.id;
+
+    await Promise.all(
+        statsArray.map((s) =>
+            createGameStatApi(
+                gameId,
+                s.id_player,
+                s.starter,
+                s.goals,
+                s.assists,
+                s.yellow_cards,
+                s.red_card
+            )
+        )
+    );
+    return game;
 }
 
 

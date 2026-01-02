@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Button } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import { fetchGamesByTeam } from '../context/actions/gamesActions';
 
@@ -14,7 +14,11 @@ class TeamGamesScreen extends Component {
 
         this.props.navigation.setOptions({
             title: `Jogos - ${team.name}`,
+            headerRight: () => (
+                <Button title="+" onPress={() => this.props.navigation.navigate('AddGame', { team })} />
+            ),
         });
+
 
         fetchGamesByTeam(teamId, this.context.dispatch);
 
@@ -27,7 +31,7 @@ class TeamGamesScreen extends Component {
         if (this.unsubscribe) this.unsubscribe();
     }
 
-    //  nOrdena por data (mais recente primeiro)
+    //  Ordena por data (mais recente primeiro)
     sortByDateDesc = (arr) => {
         return [...arr].sort((a, b) => {
             const da = new Date(String(a.date).substring(0, 10));
