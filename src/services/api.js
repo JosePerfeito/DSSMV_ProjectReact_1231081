@@ -165,6 +165,17 @@ export async function createGameWithStats(teamId, date, opponent, goalsFor, goal
     return game;
 }
 
+// Buscar gamestats por jogo
+export async function getGameStatsByGame(gameId) {
+    const q = encodeURIComponent(JSON.stringify({ id_game: gameId }));
+    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+}
+/* ===== Player Stats (GameStats by player) ===== */
+export async function getGameStatsByPlayer(playerId) {
+    const q = encodeURIComponent(JSON.stringify({ id_player: playerId }));
+    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+}
+
 
 /* ===== ImgBB ===== */
 

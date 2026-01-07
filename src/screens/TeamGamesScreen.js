@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { View, Text, FlatList, ActivityIndicator, Button } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import { fetchGamesByTeam } from '../context/actions/gamesActions';
+import { TouchableOpacity } from 'react-native';
 
 class TeamGamesScreen extends Component {
     static contextType = AppContext;
@@ -54,7 +55,8 @@ class TeamGamesScreen extends Component {
         const awayGoals = isTeamHome ? item.goals_against : item.goals_for;
 
         return (
-            <View
+            <TouchableOpacity
+                onPress={() => this.props.navigation.navigate('GameDetails', { team, game: item })}
                 style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -63,27 +65,18 @@ class TeamGamesScreen extends Component {
                     borderBottomColor: '#d0d0d0',
                 }}
             >
-                {/* Casa (esquerda) */}
-                <Text
-                    style={{ flex: 1, fontSize: 18, fontWeight: '700' }}
-                    numberOfLines={1}
-                >
+                <Text style={{ flex: 1, fontSize: 18, fontWeight: '700' }} numberOfLines={1}>
                     {homeTeamName}
                 </Text>
 
-                {/* Resultado (centro) */}
                 <Text style={{ width: 90, textAlign: 'center', fontSize: 18, fontWeight: '700' }}>
                     {homeGoals} × {awayGoals}
                 </Text>
 
-                {/* Fora (direita) */}
-                <Text
-                    style={{ flex: 1, textAlign: 'right', fontSize: 18, fontWeight: '700' }}
-                    numberOfLines={1}
-                >
+                <Text style={{ flex: 1, textAlign: 'right', fontSize: 18, fontWeight: '700' }} numberOfLines={1}>
                     {awayTeamName}
                 </Text>
-            </View>
+            </TouchableOpacity>
         );
     };
 

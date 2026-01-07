@@ -68,6 +68,7 @@ class PlayersScreen extends Component {
 
         return (
             <TouchableOpacity
+                onPress={() => this.props.navigation.navigate('PlayerStats', { player: item })}
                 style={{
                     paddingVertical: 10,
                     borderBottomWidth: 2,
