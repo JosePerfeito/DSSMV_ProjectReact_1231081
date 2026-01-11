@@ -1,7 +1,7 @@
 const BASE_URL = 'https://footballmanagement-7507.restdb.io/rest/';
 const RESTDB_API_KEY = '27b248f46568ecc48fd818ce96fd5e629b881';
 
-// nomes das coleções EXACTOS
+// nomes das coleções
 const COL = {
     USERS: 'users',
     TEAMS: 'teams',
@@ -15,7 +15,6 @@ const IMGBB_API_KEY = 'b8e2a90f6bd6751c86ce3394097b7006';
 
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
-
     const isForm = options.body instanceof FormData;
 
     const res = await fetch(url, {
@@ -32,7 +31,7 @@ async function request(path, options = {}) {
     return text ? JSON.parse(text) : null;
 }
 
-/* ===== Users ===== */
+/* ================= USERS ================= */
 
 export async function loginApi(username, password) {
     const q = encodeURIComponent(JSON.stringify({ username, password, active: true }));
@@ -60,7 +59,7 @@ export async function registerApi(username, email, password) {
     });
 }
 
-/* ===== Teams ===== */
+/* ================= TEAMS ================= */
 
 export async function getTeamsByUser(userId) {
     const q = encodeURIComponent(JSON.stringify({ user_id: userId }));
@@ -79,7 +78,7 @@ export async function createTeamApi(userId, name, imageUrl, deleteUrl) {
     });
 }
 
-/* ===== Players ===== */
+/* ================= PLAYERS ================= */
 
 export async function getPlayersByTeam(teamId) {
     const q = encodeURIComponent(JSON.stringify({ id_team: teamId }));
@@ -107,7 +106,7 @@ export async function createPlayerApi(teamId, name, birthday, number, position, 
     });
 }
 
-/* ===== Games ===== */
+/* ================= GAMES ================= */
 
 export async function getGamesByTeam(teamId) {
     const q = encodeURIComponent(JSON.stringify({ id_team: teamId }));
@@ -128,7 +127,7 @@ export async function createGameApi(teamId, date, opponent, goalsFor, goalsAgain
     });
 }
 
-/* ===== GameStats ===== */
+/* ================= GAMESTATS ================= */
 
 export async function createGameStatApi(gameId, playerId, starter, goals, assists, yellowCards, redCard) {
     return request(`/${COL.GAMESTATS}`, {
@@ -145,12 +144,28 @@ export async function createGameStatApi(gameId, playerId, starter, goals, assist
     });
 }
 
+export async function getGameStatsByGame(gameId) {
+    const q = encodeURIComponent(JSON.stringify({ id_game: gameId }));
+    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+}
+
+export async function getGameStatsByGameIds(gameIds) {
+    if (!Array.isArray(gameIds) || gameIds.length === 0) return [];
+    const q = encodeURIComponent(JSON.stringify({ id_game: { $in: gameIds } }));
+    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+}
+
+export async function getGameStatsByPlayer(playerId) {
+    const q = encodeURIComponent(JSON.stringify({ id_player: playerId }));
+    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+}
+
 export async function createGameWithStats(teamId, date, opponent, goalsFor, goalsAgainst, home, statsArray) {
     const game = await createGameApi(teamId, date, opponent, goalsFor, goalsAgainst, home);
     const gameId = game._id || game.id;
 
     await Promise.all(
-        statsArray.map((s) =>
+        (statsArray || []).map((s) =>
             createGameStatApi(
                 gameId,
                 s.id_player,
@@ -162,25 +177,37 @@ export async function createGameWithStats(teamId, date, opponent, goalsFor, goal
             )
         )
     );
+
     return game;
 }
 
-// Buscar gamestats por jogo
-export async function getGameStatsByGame(gameId) {
-    const q = encodeURIComponent(JSON.stringify({ id_game: gameId }));
-    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
-}
-/* ===== Player Stats (GameStats by player) ===== */
-export async function getGameStatsByPlayer(playerId) {
-    const q = encodeURIComponent(JSON.stringify({ id_player: playerId }));
-    return request(`/${COL.GAMESTATS}?q=${q}`, { method: 'GET' });
+/* ================= RESTDB DELETE HELPERS ================= */
+
+export async function deleteById(collection, id) {
+    if (!id) return null;
+    return request(`/${collection}/${id}`, { method: 'DELETE' });
 }
 
+export async function deleteTeamApi(teamId) {
+    return deleteById(COL.TEAMS, teamId);
+}
+export async function deletePlayerApi(playerId) {
+    return deleteById(COL.PLAYERS, playerId);
+}
+export async function deleteGameApi(gameId) {
+    return deleteById(COL.GAMES, gameId);
+}
+export async function deleteGameStatApi(gameStatId) {
+    return deleteById(COL.GAMESTATS, gameStatId);
+}
 
-/* ===== ImgBB ===== */
+export async function deleteUserApi(userId) {
+    return deleteById(COL.USERS, userId);
+}
+
+/* ================= ImgBB UPLOAD ================= */
 
 export async function uploadImageToImgbb(base64Image) {
-    // base64Image deve vir SEM prefixo "data:image/..."
     const form = new FormData();
     form.append('key', IMGBB_API_KEY);
     form.append('image', base64Image);
@@ -191,10 +218,81 @@ export async function uploadImageToImgbb(base64Image) {
     });
 
     const json = await res.json();
-    if (!res.ok || !json?.data?.url) throw new Error('Erro ao enviar imagem para ImgBB');
 
-    return {
-        imageUrl: json.data.url,
-        deleteUrl: json.data.delete_url,
-    };
+    const imageUrl = json?.data?.url;
+    const deleteUrl = json?.data?.delete_url;
+
+    if (!res.ok || !imageUrl || !deleteUrl) {
+        throw new Error('Erro ao enviar imagem para ImgBB');
+    }
+
+    return { imageUrl, deleteUrl };
+}
+
+
+/* ================= ImgBB DELETE (API OFICIAL) ================= */
+
+// delete_url costuma ser: https://ibb.co/<deleteHash>
+// (o hash está no último segmento)
+function extractImgbbDeleteHash(deleteUrl) {
+    if (!deleteUrl || typeof deleteUrl !== 'string') return null;
+    const parts = deleteUrl.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : null;
+}
+
+export async function deleteImageFromImgbb(deleteUrl) {
+    try {
+        const deleteHash = extractImgbbDeleteHash(deleteUrl);
+        if (!deleteHash) return false;
+
+        const url = `https://api.imgbb.com/1/image/${deleteHash}?key=${IMGBB_API_KEY}`;
+        const res = await fetch(url, { method: 'DELETE' });
+
+        // ImgBB às vezes devolve json mesmo em erro
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok) {
+            console.warn('ImgBB delete falhou:', res.status, json || '');
+            return false;
+        }
+
+        return true;
+    } catch (e) {
+        console.warn('Falha a apagar imagem ImgBB:', e?.message || e);
+        return false;
+    }
+}
+
+/* ================= CASCADE DELETE (TEAM) ================= */
+
+export async function deleteTeamCascade(team) {
+    const teamId = team?._id || team?.id;
+    if (!teamId) throw new Error('Equipa inválida');
+
+    // 1) buscar jogadores e jogos
+    const [players, games] = await Promise.all([
+        getPlayersByTeam(teamId),
+        getGamesByTeam(teamId),
+    ]);
+
+    // 2) buscar stats de cada jogo
+    const statsByGame = await Promise.all(
+        (games || []).map((g) => getGameStatsByGame(g._id || g.id))
+    );
+    const allStats = statsByGame.flat().filter(Boolean);
+
+    // 3) apagar imagens primeiro
+    // equipa: image_delete_url
+    await deleteImageFromImgbb(team?.image_delete_url);
+
+    // jogadores: photo_delete_url
+    await Promise.all((players || []).map((p) => deleteImageFromImgbb(p?.photo_delete_url)));
+
+    // 4) apagar gamestats -> jogos -> jogadores -> equipa
+    await Promise.all(allStats.map((s) => deleteGameStatApi(s._id || s.id)));
+    await Promise.all((games || []).map((g) => deleteGameApi(g._id || g.id)));
+    await Promise.all((players || []).map((p) => deletePlayerApi(p._id || p.id)));
+    await deleteTeamApi(teamId);
+
+    return true;
 }
